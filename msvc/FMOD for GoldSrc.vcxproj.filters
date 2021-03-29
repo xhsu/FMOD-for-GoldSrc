@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Files\hlsdk">
+      <UniqueIdentifier>{714b3ed3-a4ed-4e83-afee-3ba0473c1481}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Files\hlsdk\public">
+      <UniqueIdentifier>{f0ffcb4d-3714-4435-8cc8-a79414874804}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\precompiled.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlsdk\public\interface.h">
+      <Filter>Files\hlsdk\public</Filter>
+    </ClInclude>
+    <ClInclude Include="..\metahook.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\exportfuncs.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\precompiled.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hlsdk\public\interface.cpp">
+      <Filter>Files\hlsdk\public</Filter>
+    </ClCompile>
+    <ClCompile Include="..\metahook.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\exportfuncs.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
