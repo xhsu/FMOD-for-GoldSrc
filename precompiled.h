@@ -9,6 +9,9 @@ Modern Warfare Dev Team
 
 #pragma once
 
+#include <array>
+#include <unordered_map>
+
 #include "public/basetypes.h"
 #include "engine/maintypes.h"
 #include "engine/archtypes.h"
@@ -17,9 +20,23 @@ Modern Warfare Dev Team
 
 // interface
 #include "public/interface.h"
+#include "Interface/IFileSystem.h"
 
 // core of metahook (version 0.4)
 #include "metahook.h"
 
 // hook client export funcs
 #include "exportfuncs.h"
+
+// for view.cpp hooking.
+#include "ref_params.h"
+
+// for HUD_PostRunCmd() hooking.
+#include "entity_state.h"
+
+// for HUD_StudioEvent() hooking.
+#include "studio_event.h"
+
+// FMOD: What this plugin for.
+#include "FMOD/fmod.hpp"
+#include "sound.h"

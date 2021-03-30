@@ -25,6 +25,9 @@
     <ClInclude Include="..\exportfuncs.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\sound.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\precompiled.cpp">
@@ -37,6 +40,9 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="..\exportfuncs.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sound.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>

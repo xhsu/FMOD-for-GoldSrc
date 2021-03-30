@@ -125,7 +125,7 @@ inline char *_strlwr(char *start)
 	#define Q_strlwr _strlwr
 	#define Q_strupr _strupr
 	#define Q_sprintf sprintf_s
-	#define Q_snprintf _snprintf
+	#define Q_snprintf _snprintf_s
 	#define Q_vsnprintf _vsnprintf
 	#define Q_vsnwprintf _vsnwprintf
 	#define Q_atoi atoi

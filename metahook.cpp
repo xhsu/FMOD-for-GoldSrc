@@ -27,6 +27,7 @@ void IPlugins::Init(metahook_api_t* pAPI, mh_interface_t* pInterface, mh_engines
 
 void IPlugins::Shutdown(void)
 {
+	Sound_Exit();
 }
 
 void IPlugins::LoadEngine(void)
@@ -43,7 +44,10 @@ void IPlugins::LoadClient(cl_exportfuncs_t* pExportFunc)
 
 	// Hooks
 	pExportFunc->Initialize = &Initialize;
-	pExportFunc->HUD_Redraw = &HUD_Redraw;
+	pExportFunc->V_CalcRefdef = &V_CalcRefdef;
+	pExportFunc->HUD_PostRunCmd = &HUD_PostRunCmd;
+	pExportFunc->HUD_Frame = &HUD_Frame;
+	pExportFunc->HUD_StudioEvent = &HUD_StudioEvent;
 }
 
 void IPlugins::ExitGame(int iResult)
