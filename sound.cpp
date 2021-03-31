@@ -18,8 +18,8 @@ FMOD::Channel* g_phLocal2DChannel = nullptr;
 double g_flClientTime = 0;
 double g_flClientTimeDelta = 0;
 
-void (*g_pfnS_StartStaticSound)(int entnum, int entchannel, struct sfx_t* sfxin, Vector origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
-void (*g_pfnS_StartDynamicSound)(int entnum, int entchannel, struct sfx_t* sfxin, Vector origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
+void (*g_pfnS_StartStaticSound)(int entnum, int entchannel, struct sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
+void (*g_pfnS_StartDynamicSound)(int entnum, int entchannel, struct sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 
 static std::unordered_map<std::string, FMOD::Sound*> g_mapSoundPrecache;
 static char szBuffer1[256], szBuffer2[1024];
@@ -193,13 +193,13 @@ void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Ve
 	(*ppChannel)->setPaused(false);
 }
 
-void S_StartStaticSound(int iEntity, int iChannel, struct sfx_t* pSFXin, Vector vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
+void S_StartStaticSound(int iEntity, int iChannel, struct sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
 	std::string str = std::string((char*)pSFXin);
 	g_pfnS_StartStaticSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
 }
 
-void S_StartDynamicSound(int iEntity, int iChannel, struct sfx_t* pSFXin, Vector vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
+void S_StartDynamicSound(int iEntity, int iChannel, struct sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
 	std::string str = std::string((char*)pSFXin);
 	g_pfnS_StartDynamicSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
