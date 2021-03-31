@@ -36,8 +36,12 @@ inline FMOD_VECTOR VecConverts(const Vector& v, bool bScale = false)
 }
 
 void Sound_Init();
+void Sound_InstallHook();
 void Sound_Think(double flDeltaTime);
 void Sound_Exit();
 
 void PlaySound(const char* szSound, int iPitch = 100);
 void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Vector& vecOrigin, int iPitch = 100);
+
+void S_StartStaticSound(int entnum, int entchannel, struct sfx_t* sfxin, Vector origin, float fvol, float attenuation, int flags, int pitch);
+void S_StartDynamicSound(int entnum, int entchannel, struct sfx_t* sfxin, Vector origin, float fvol, float attenuation, int flags, int pitch);
