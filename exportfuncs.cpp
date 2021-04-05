@@ -28,6 +28,11 @@ int Initialize(struct cl_enginefuncs_s* pEnginefuncs, int iVersion)
 	if (bResult)
 	{
 		Sound_Init();	// Wait until gEngfuncs ready.
+
+		/*
+		Extended into original sound system.
+		*/
+		Sound_InstallHook();
 	}
 
 	return bResult;

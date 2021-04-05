@@ -28,6 +28,9 @@
     <ClInclude Include="..\sound.h">
       <Filter>Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\fmod.h">
+      <Filter>Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\precompiled.cpp">
@@ -43,6 +46,9 @@
       <Filter>Files</Filter>
     </ClCompile>
     <ClCompile Include="..\sound.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fmod.cpp">
       <Filter>Files</Filter>
     </ClCompile>
   </ItemGroup>

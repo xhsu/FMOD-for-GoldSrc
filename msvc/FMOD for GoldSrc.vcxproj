@@ -158,6 +158,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\exportfuncs.h" />
+    <ClInclude Include="..\fmod.h" />
     <ClInclude Include="..\hlsdk\public\interface.h" />
     <ClInclude Include="..\metahook.h" />
     <ClInclude Include="..\precompiled.h" />
@@ -165,6 +166,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\exportfuncs.cpp" />
+    <ClCompile Include="..\fmod.cpp" />
     <ClCompile Include="..\hlsdk\public\interface.cpp" />
     <ClCompile Include="..\metahook.cpp" />
     <ClCompile Include="..\precompiled.cpp">

@@ -39,4 +39,5 @@ Modern Warfare Dev Team
 
 // FMOD: What this plugin for.
 #include "FMOD/fmod.hpp"
+#include "fmod.h"
 #include "sound.h"
