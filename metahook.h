@@ -36,7 +36,7 @@ typedef struct metahook_api_s
 }
 metahook_api_t;
 
-#include <cdll_export.h>
+#include "cdll_export.h"
 
 typedef struct mh_enginesave_s
 {

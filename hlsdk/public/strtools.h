@@ -199,7 +199,7 @@ inline void Q_FixSlashes(char *pname, char separator = CORRECT_PATH_SEPARATOR)
 
 // strcpy that works correctly with overlapping src and dst buffers
 inline char *Q_strcpy_s(char *dst, char *src) {
-	int len = Q_strlen(src);
-	Q_memmove(dst, src, len + 1);
+	auto len = Q_strlen(src);
+	Q_memmove(dst, src, len + 1U);
 	return dst;
 }

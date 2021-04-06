@@ -30,7 +30,7 @@ namespace gFMODChannelManager
 	};
 	std::array<channel_info_s, FMOD_MAX_CHANNEL_GOLDSRC> m_Channels;
 
-	FMOD::Channel** Allocate(float flCooldown = 3.5f)
+	FMOD::Channel** Allocate(float flCooldown)
 	{
 		size_t iMin = 0;
 		double flMinTime = 99999999.0;
