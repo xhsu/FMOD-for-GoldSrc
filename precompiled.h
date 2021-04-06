@@ -11,6 +11,7 @@ Modern Warfare Dev Team
 
 #include <array>
 #include <list>
+#include <map>
 #include <unordered_map>
 
 #include "public/basetypes.h"
@@ -40,6 +41,9 @@ Modern Warfare Dev Team
 
 // Of course you need access to entity.
 #include "cl_entity.h"
+
+//
+#include "event_api.h"
 
 // FMOD: What this plugin for.
 #include "FMOD/fmod.hpp"

@@ -35,6 +35,12 @@ void IPlugins::LoadEngine(void)
 	g_dwEngineBuildnum = g_pMetaHookAPI->GetEngineBuildnum();
 	g_dwEngineBase = g_pMetaHookAPI->GetEngineBase();
 	g_dwEngineSize = g_pMetaHookAPI->GetEngineSize();
+
+	/*
+	Extended into original sound system.
+	Need to hook engine ASAP.
+	*/
+	Sound_InstallHook();
 }
 
 void IPlugins::LoadClient(cl_exportfuncs_t* pExportFunc)

@@ -21,11 +21,20 @@ extern double g_flClientTimeDelta;
 constexpr FMOD_VECTOR	g_fmodvecZero = { 0.0f, 0.0f, 0.0f };
 constexpr float			SND_DISTANCEFACTOR = 39.3701f;          // Units per meter. I.e feet would = 3.28. centimeters would = 100. inch would 39.3701f.
 
+typedef struct fmod_channel_info_s
+{
+	FMOD::Channel** m_ppChannel{ nullptr };
+	unsigned		m_uIndex{ 0U };
+
+} fmod_channel_info_t;
+
 namespace gFMODChannelManager
 {
 	FMOD::Channel** Allocate(float flCooldown = 3.5f);
 	FMOD::Channel** PermanentAllocate(size_t* piIndex);
+	void PermanentAllocate(fmod_channel_info_t* info);	// Recommanded.
 	void Free(size_t index);
+	void Free(fmod_channel_info_t* info);
 }
 
 inline FMOD_VECTOR VecConverts(const Vector& v, bool bScale = false)

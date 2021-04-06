@@ -102,10 +102,26 @@ namespace gFMODChannelManager
 		return &m_Channels[iMin].m_pChannel;
 	}
 
+	void PermanentAllocate(fmod_channel_info_t* info)
+	{
+		info->m_ppChannel = PermanentAllocate(&info->m_uIndex);
+	}
+
 	void Free(size_t index)
 	{
 		m_Channels[index].m_flNextAvailable = g_flClientTime;
 		m_Channels[index].m_pChannel->stop();
+	}
+
+	void Free(fmod_channel_info_t* info)
+	{
+		if (!info->m_uIndex || !info->m_ppChannel)	// Already freed?
+			return;
+
+		Free(info->m_uIndex);
+
+		info->m_ppChannel = nullptr;
+		info->m_uIndex = 0U;
 	}
 }
 
@@ -114,12 +130,29 @@ void Test_FMOD(void)
 {
 	PlaySound("weapons/xm1014-2.wav");
 }
+
+void CountChannels(void)
+{
+	int iResult = 0;
+
+	for (auto& info : gFMODChannelManager::m_Channels)
+	{
+		if (info.m_flNextAvailable < g_flClientTime)
+		{
+			iResult++;
+		}
+	}
+
+	std::string text = "Avaliable channels: " + std::to_string(iResult) + "\n";
+	gEngfuncs.pfnConsolePrint(text.c_str());
+}
 #endif
 
 void Sound_Init()
 {
 #ifdef _DEBUG
 	gEngfuncs.pfnAddCommand("testfmod", &Test_FMOD);
+	gEngfuncs.pfnAddCommand("countchannels", &CountChannels);
 #endif
 
 	/*
@@ -178,7 +211,11 @@ void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Ve
 
 void Sound_Think(double flDeltaTime)
 {
+	/*
+		Iterate through all entity-based sound and find the dead ones.
+	*/
 	FMOD_VECTOR pos = g_fmodvecZero;
+	FMOD_VECTOR vel = g_fmodvecZero;
 
 	for (auto& rgChannelSetPair : g_mapEntitySound)
 	{
@@ -189,18 +226,23 @@ void Sound_Think(double flDeltaTime)
 		{
 			auto& ppChannel = ppChannelPair.second.m_ppChannel;
 
+			if (!ppChannel || !ppChannelPair.second.m_uIndex)
+				continue;	// A deleted channel.
+
 			if (bShouldRemove)
 			{
-				gFMODChannelManager::Free(ppChannelPair.second.m_uIndex);	// Just free the channel if it is unused.
-				ppChannelPair.second.m_ppChannel = nullptr;
+				gFMODChannelManager::Free(&ppChannelPair.second);	// Just free the channel if it is unused.
 			}
 			else
 			{
 				pos = VecConverts(pEntity->origin, true);
-				(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);	// Sync the position with this entity.
+				vel = VecConverts(pEntity->curstate.velocity, true);
+
+				(*ppChannel)->set3DAttributes(&pos, &vel);	// Sync the position with this entity.
 			}
 		}
 	}
+
 	/*
 		Update the listener. (i.e., the player.)
 	*/
@@ -208,7 +250,7 @@ void Sound_Think(double flDeltaTime)
 	gEngfuncs.pfnAngleVectors(g_vecViewAngle, vecFwd, vecRight, vecUp);
 
 	pos = VecConverts(g_vecViewOrigin, true);
-	FMOD_VECTOR vel = VecConverts(g_vecPlayerVelocity, true);
+	vel = VecConverts(g_vecPlayerVelocity, true);
 	FMOD_VECTOR forward = VecConverts(vecFwd);
 	FMOD_VECTOR up = VecConverts(vecUp);
 
