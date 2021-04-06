@@ -163,6 +163,7 @@
     <ClInclude Include="..\metahook.h" />
     <ClInclude Include="..\precompiled.h" />
     <ClInclude Include="..\sound.h" />
+    <ClInclude Include="..\util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\exportfuncs.cpp" />

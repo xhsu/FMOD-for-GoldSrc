@@ -21,12 +21,18 @@ void Sound_InstallHook()
 	*(void**)&g_pfnS_StartDynamicSound = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, S_StartDynamicSound_SIG, sizeof(S_StartDynamicSound_SIG) - 1U);
 	if (g_pfnS_StartDynamicSound)
 		g_pMetaHookAPI->InlineHook(g_pfnS_StartDynamicSound, S_StartDynamicSound, (void*&)g_pfnS_StartDynamicSound);
+	else
+		Sys_Error("Function \"S_StartDynamicSound\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
 
 	*(void**)&g_pfnS_StartStaticSound = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, S_StartStaticSound_SIG, sizeof(S_StartStaticSound_SIG) - 1U);
 	if (g_pfnS_StartStaticSound)
 		g_pMetaHookAPI->InlineHook(g_pfnS_StartStaticSound, S_StartStaticSound, (void*&)g_pfnS_StartStaticSound);
+	else
+		Sys_Error("Function \"S_StartStaticSound\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
 
 	*(void**)&g_pfnCache_Check = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, Cache_Check_SIG, sizeof(Cache_Check_SIG) - 1U);
+	if (!g_pfnCache_Check)
+		Sys_Error("Function \"Cache_Check\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
 }
 
 bool Sound_IsLoopedByWav(sfx_t* pSFXin)
