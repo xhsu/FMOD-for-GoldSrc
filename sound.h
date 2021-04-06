@@ -21,6 +21,7 @@ Modern Warfare Dev Team
 #define CHAN_NETWORKVOICE_END	500 // network voice data reserves slots (CHAN_NETWORKVOICE_BASE through CHAN_NETWORKVOICE_END).
 #define CHAN_BOT				501 // channel used for bot chatter.
 
+// From ReGameDLL-CS
 #define SND_STOP				BIT(5)	// duplicated in protocol.h stop sound
 #define SND_CHANGE_VOL			BIT(6)	// duplicated in protocol.h change sound vol
 #define SND_CHANGE_PITCH		BIT(7)	// duplicated in protocol.h change sound pitch
@@ -29,10 +30,19 @@ Modern Warfare Dev Team
 #define S_StartStaticSound_SIG	"\x55\x8B\xEC\x83\xEC\x44\x53\x56\x57\x8B\x7D\x10\x85\xFF\xC7\x45\xFC\x00\x00\x00\x00"
 #define S_StartDynamicSound_SIG	"\x55\x8B\xEC\x83\xEC\x48\xA1\x2A\x2A\x2A\x2A\x53\x56\x57\x85\xC0"
 
-using EntitySoundChannel = std::unordered_map<int, FMOD::Channel**>;
-using EntitySoundMap = std::unordered_map<int, EntitySoundChannel>;
+typedef struct fmod_channel_info_s
+{
+	FMOD::Channel** m_ppChannel	{ nullptr };
+	unsigned		m_uIndex	{ 0U };
 
+} fmod_channel_info_t;
+
+using EntitySoundChannel = std::unordered_map<int, fmod_channel_info_t>;
+using EntitySoundMap = std::unordered_map<int, EntitySoundChannel>;
 extern EntitySoundMap g_mapEntitySound;
+
+using PositionSoundMap = std::unordered_map<Vector, fmod_channel_info_t>;
+extern PositionSoundMap g_mapPositionSounds;
 
 void Sound_InstallHook();
 void S_StartStaticSound(int entnum, int entchannel, struct sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch);

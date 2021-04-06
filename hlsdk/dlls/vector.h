@@ -139,6 +139,8 @@ public:
 	vec_t x, y;
 };
 
+constexpr Vector2D VEC2_ZERO = Vector2D();
+
 inline constexpr real_t DotProduct(const Vector2D &a, const Vector2D &b)
 {
 	return (a.X() * b.X() + a.Y() * b.Y());
@@ -692,6 +694,8 @@ public:
 	union { vec_t y; vec_t yaw;		vec_t g; };
 	union { vec_t z; vec_t roll;	vec_t b; };
 };
+
+constexpr Vector VEC3_ZERO = Vector();
 
 inline constexpr Vector operator*(float fl, const Vector &v)
 {

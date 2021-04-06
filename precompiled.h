@@ -10,6 +10,7 @@ Modern Warfare Dev Team
 #pragma once
 
 #include <array>
+#include <list>
 #include <unordered_map>
 
 #include "public/basetypes.h"
@@ -36,6 +37,9 @@ Modern Warfare Dev Team
 
 // for HUD_StudioEvent() hooking.
 #include "studio_event.h"
+
+// Of course you need access to entity.
+#include "cl_entity.h"
 
 // FMOD: What this plugin for.
 #include "FMOD/fmod.hpp"

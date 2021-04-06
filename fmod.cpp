@@ -135,40 +135,42 @@ void Sound_Init()
 	gFModSystem->set3DSettings(1.0, SND_DISTANCEFACTOR, 1.0f);
 }
 
-void PlaySound(const char* szSound, int iPitch)
+FMOD::Sound* PrecacheSound(std::string szSample, FMOD_MODE iMode)
 {
-	Q_snprintf(szBuffer1, ARRAYSIZE(szBuffer1) - 1U, "sound/%s", szSound);
+	Q_snprintf(szBuffer1, ARRAYSIZE(szBuffer1) - 1U, "sound/%s", szSample.c_str());
 	g_pInterface->FileSystem->GetLocalPath(szBuffer1, szBuffer2, ARRAYSIZE(szBuffer2) - 1U);
 
 	if (g_mapSoundPrecache.find(szBuffer2) == g_mapSoundPrecache.end())
 	{
 		// precache no found, let's do it.
-		gFModSystem->createSound(szBuffer2, FMOD_2D | FMOD_LOOP_OFF, 0, &g_mapSoundPrecache[szBuffer2]);
+		gFModSystem->createSound(szBuffer2, iMode, 0, &g_mapSoundPrecache[szBuffer2]);
+	}
+	else
+	{
+		// Switch to current mode. This is because that it could be played under a different mode.
+		g_mapSoundPrecache[szBuffer2]->setMode(iMode);
 	}
 
-	gFModSystem->playSound(g_mapSoundPrecache[szBuffer2], nullptr, false, &g_phLocal2DChannel);
+	return g_mapSoundPrecache[szBuffer2];
+}
+
+void PlaySound(const char* szSound, int iPitch)
+{
+	gFModSystem->playSound(PrecacheSound(szSound, FMOD_2D | FMOD_LOOP_OFF), nullptr, false, &g_phLocal2DChannel);
 	g_phLocal2DChannel->setPitch(float(iPitch) / 100.0f);
 }
 
 void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Vector& vecOrigin, int iPitch)
 {
-	Q_snprintf(szBuffer1, ARRAYSIZE(szBuffer1) - 1U, "sound/%s", szSound);
-	g_pInterface->FileSystem->GetLocalPath(szBuffer1, szBuffer2, ARRAYSIZE(szBuffer2) - 1U);
-
 	FMOD_TIMEUNIT iLength = 3500;
 	FMOD_VECTOR	pos = VecConverts(vecOrigin, true);
+	auto pSound = PrecacheSound(szSound, FMOD_DEFAULT_IN_GOLDSRC);
 
-	if (g_mapSoundPrecache.find(szBuffer2) == g_mapSoundPrecache.end())
-	{
-		// precache no found, let's do it.
-		gFModSystem->createSound(szBuffer2, FMOD_DEFAULT_IN_GOLDSRC, 0, &g_mapSoundPrecache[szBuffer2]);
-	}
-
-	g_mapSoundPrecache[szBuffer2]->set3DMinMaxDistance(flMinDist / SND_DISTANCEFACTOR, flMaxDist / SND_DISTANCEFACTOR);
-	g_mapSoundPrecache[szBuffer2]->getLength(&iLength, FMOD_TIMEUNIT_MS);
+	pSound->set3DMinMaxDistance(flMinDist / SND_DISTANCEFACTOR, flMaxDist / SND_DISTANCEFACTOR);
+	pSound->getLength(&iLength, FMOD_TIMEUNIT_MS);
 
 	auto ppChannel = gFMODChannelManager::Allocate(float(iLength) / 1000.0f);
-	gFModSystem->playSound(g_mapSoundPrecache[szBuffer2], nullptr, true, ppChannel);	// Have to activate the channel first. Otherwise it will be a nullptr.
+	gFModSystem->playSound(pSound, nullptr, true, ppChannel);	// Have to activate the channel first. Otherwise it will be a nullptr.
 	(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);
 	(*ppChannel)->setPitch(float(iPitch) / 100.0f);	// original formula for most CS weapons: 94 + gEngfuncs.pfnRandomLong(0, 0xf)
 	(*ppChannel)->setPaused(false);
@@ -176,10 +178,36 @@ void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Ve
 
 void Sound_Think(double flDeltaTime)
 {
+	FMOD_VECTOR pos = g_fmodvecZero;
+
+	for (auto& rgChannelSetPair : g_mapEntitySound)
+	{
+		cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(rgChannelSetPair.first);
+		bool bShouldRemove = (!pEntity || !pEntity->model);	// Del its channel if the entity gets removed.
+
+		for (auto& ppChannelPair : rgChannelSetPair.second)
+		{
+			auto& ppChannel = ppChannelPair.second.m_ppChannel;
+
+			if (bShouldRemove)
+			{
+				gFMODChannelManager::Free(ppChannelPair.second.m_uIndex);	// Just free the channel if it is unused.
+				ppChannelPair.second.m_ppChannel = nullptr;
+			}
+			else
+			{
+				pos = VecConverts(pEntity->origin, true);
+				(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);	// Sync the position with this entity.
+			}
+		}
+	}
+	/*
+		Update the listener. (i.e., the player.)
+	*/
 	Vector vecFwd, vecRight, vecUp;
 	gEngfuncs.pfnAngleVectors(g_vecViewAngle, vecFwd, vecRight, vecUp);
 
-	FMOD_VECTOR pos = VecConverts(g_vecViewOrigin, true);
+	pos = VecConverts(g_vecViewOrigin, true);
 	FMOD_VECTOR vel = VecConverts(g_vecPlayerVelocity, true);
 	FMOD_VECTOR forward = VecConverts(vecFwd);
 	FMOD_VECTOR up = VecConverts(vecUp);
