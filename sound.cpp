@@ -11,7 +11,7 @@ Modern Warfare Dev Team
 
 void (*g_pfnS_StartStaticSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 void (*g_pfnS_StartDynamicSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
-void *(*g_pfnCache_Check)(struct cache_user_t** c) = nullptr;
+void *(*g_pfnCache_Check)(cache_user_t* c) = nullptr;
 
 EntitySoundMap g_mapEntitySound;
 PositionSoundMap g_mapPositionSounds;

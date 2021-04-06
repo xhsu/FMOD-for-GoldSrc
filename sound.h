@@ -36,13 +36,20 @@ Modern Warfare Dev Team
 #define S_StartDynamicSound_SIG	"\x55\x8B\xEC\x83\xEC\x48\xA1\x2A\x2A\x2A\x2A\x53\x56\x57\x85\xC0"
 #define Cache_Check_SIG			"\x55\x8B\xEC\x57\x8B\x7D\x08\x8B\x07\x85\xC0\x75\x2A\x5F\x5D\xC3"
 
+typedef struct cache_user_s
+{
+	void*	data;	// What the fuck, Valve?
+
+} cache_user_t;
+
 #define MAX_QPATH 64
 
 typedef struct sfx_s
 {
-	char					name[MAX_QPATH];
-	struct cache_user_t*	cache;
-	int						servercount;
+	char			name[MAX_QPATH];
+	cache_user_t	cache;	// Feel funny, HUH?
+	int				servercount;
+
 } sfx_t;
 
 typedef struct sfxcache_s
