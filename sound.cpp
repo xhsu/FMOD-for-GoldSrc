@@ -145,12 +145,30 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 
 void S_StartStaticSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
-	StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+	switch (pSFXin->name[0])
+	{
+	case '*':	// Large sound file. =>S_LoadStreamSound
+	case '?':	// NET VOICE CHAT??? =>VoiceSE_GetSFXCache
+	case '!':	// Player standard radio???
+		g_pfnS_StartStaticSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+		
+	default:
+		StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+	}
 }
 
 void S_StartDynamicSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
-	StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+	switch (pSFXin->name[0])
+	{
+	case '*':
+	case '?':
+	case '!':
+		g_pfnS_StartDynamicSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+
+	default:
+		StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+	}
 }
 
 void S_StopAllSounds(bool STFU)
