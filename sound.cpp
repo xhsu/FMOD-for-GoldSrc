@@ -12,7 +12,8 @@ Modern Warfare Dev Team
 void (*g_pfnS_StartStaticSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 void (*g_pfnS_StartDynamicSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 void *(*g_pfnCache_Check)(cache_user_t* c) = nullptr;
-sfxcache_t* (*g_pfnS_LoadSound)(sfx_t* s, /*channel_t* */void* ch) = nullptr;	// Since we cannot handle channel_t*
+sfxcache_t* (*g_pfnS_LoadSound)(sfx_t* s, /*channel_t* */void* ch) = nullptr;	// Due to we cannot handle channel_t*
+void (*g_pfnS_StopAllSounds)(bool STFU) = nullptr;
 
 EntitySoundMap g_mapEntitySound;
 PositionSoundMap g_mapPositionSounds;
@@ -38,13 +39,19 @@ void Sound_InstallHook()
 	*(void**)&g_pfnS_LoadSound = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, S_LoadSound_SIG, sizeof(S_LoadSound_SIG) - 1U);
 	if (!g_pfnS_LoadSound)
 		Sys_Error("Function \"S_LoadSound\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
+
+	*(void**)&g_pfnS_StopAllSounds = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, S_StopAllSounds_SIG, sizeof(S_StopAllSounds_SIG) - 1U);
+	if (g_pfnS_StopAllSounds)
+		g_pMetaHookAPI->InlineHook(g_pfnS_StopAllSounds, S_StopAllSounds, (void*&)g_pfnS_StopAllSounds);
+	else
+		Sys_Error("Function \"S_StopAllSounds\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
 }
 
 bool Sound_IsLoopedByWav(sfx_t* pSFXin)
 {
 	sfxcache_t* sc = (sfxcache_t *)g_pfnCache_Check(&pSFXin->cache);
 
-	if (!sc)
+	if (!sc && pSFXin->name[0] != '*')	// Otherwise it would cause CTD if you pass nullptr for param 2.
 		sc = g_pfnS_LoadSound(pSFXin, nullptr);
 
 	return sc && sc->loopstart >= 0;
@@ -72,7 +79,7 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 	if (gEngfuncs.pEventAPI->EV_IsLocal(iEntity - 1) || !iEntity)	// iEntity == 0 is menu sound???
 	{
 		// TODO: This cannot cover the observer situation.
-		PlaySound(pSFXin->name);
+		PlaySound(pSFXin->name, flVolume, iPitch);
 		return;
 	}
 
@@ -144,4 +151,27 @@ void S_StartStaticSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOri
 void S_StartDynamicSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
 	StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
+}
+
+void S_StopAllSounds(bool STFU)
+{
+	g_pfnS_StopAllSounds(STFU);	// Still needs this.
+
+	// Stop all sound.
+
+	for (auto& rgChannelSetPair : g_mapEntitySound)
+	{
+		for (auto& ppChannelPair : rgChannelSetPair.second)
+		{
+			gFMODChannelManager::Free(&ppChannelPair.second);
+		}
+	}
+
+	for (auto& channelPair : g_mapPositionSounds)
+	{
+		gFMODChannelManager::Free(&channelPair.second);
+	}
+
+	g_mapEntitySound.clear();
+	g_mapPositionSounds.clear();
 }

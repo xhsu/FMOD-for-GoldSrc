@@ -36,6 +36,7 @@ Modern Warfare Dev Team
 #define S_StartDynamicSound_SIG	"\x55\x8B\xEC\x83\xEC\x48\xA1\x2A\x2A\x2A\x2A\x53\x56\x57\x85\xC0"
 #define Cache_Check_SIG			"\x55\x8B\xEC\x57\x8B\x7D\x08\x8B\x07\x85\xC0\x75\x2A\x5F\x5D\xC3"
 #define S_LoadSound_SIG			"\x55\x8B\xEC\x81\xEC\x2A\x2A\x2A\x2A\x53\x8B\x5D\x08\x56\x57\x8A\x03"
+#define S_StopAllSounds_SIG		"\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x85\xC0\x74\x2A\x56\xC7\x05\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\xBE"
 
 typedef struct cache_user_s
 {
@@ -76,3 +77,4 @@ extern PositionSoundMap g_mapPositionSounds;
 void Sound_InstallHook();
 void S_StartStaticSound(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch);
 void S_StartDynamicSound(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch);
+void S_StopAllSounds(bool STFU);

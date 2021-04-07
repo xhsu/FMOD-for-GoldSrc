@@ -58,5 +58,5 @@ void Sound_Think(double flDeltaTime);
 void Sound_Exit();
 
 FMOD::Sound* PrecacheSound(std::string szSample, FMOD_MODE iMode);
-void PlaySound(const char* szSound, int iPitch = 100);
+void PlaySound(const char* szSound, float flVolume = VOL_NORM, int iPitch = PITCH_NORM);
 void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Vector& vecOrigin, int iPitch = 100);

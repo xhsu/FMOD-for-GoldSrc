@@ -193,10 +193,18 @@ FMOD::Sound* PrecacheSound(std::string szSample, FMOD_MODE iMode)
 	return g_mapSoundPrecache[szBuffer2];
 }
 
-void PlaySound(const char* szSound, int iPitch)
+void PlaySound(const char* szSound, float flVolume, int iPitch)
 {
-	gFModSystem->playSound(PrecacheSound(szSound, FMOD_2D | FMOD_LOOP_OFF), nullptr, false, &g_phLocal2DChannel);
-	g_phLocal2DChannel->setPitch(float(iPitch) / 100.0f);
+	FMOD_TIMEUNIT iLength = 3500;
+	auto pSound = PrecacheSound(szSound, FMOD_DEFAULT_IN_GOLDSRC);
+	pSound->getLength(&iLength, FMOD_TIMEUNIT_MS);
+
+	auto ppChannel = gFMODChannelManager::Allocate(float(iLength) / 1000.0f);
+	gFModSystem->playSound(PrecacheSound(szSound, FMOD_2D | FMOD_LOOP_OFF), nullptr, false, ppChannel);
+	(*ppChannel)->setVolume(flVolume);
+	(*ppChannel)->setVolumeRamp(false);
+	(*ppChannel)->setPitch(float(iPitch) / 100.0f);
+	(*ppChannel)->setPaused(false);
 }
 
 void Play3DSound(const char* szSound, float flMinDist, float flMaxDist, const Vector& vecOrigin, int iPitch)
@@ -232,17 +240,17 @@ void Sound_Think(double flDeltaTime)
 		{
 			auto& ppChannel = ppChannelPair.second.m_ppChannel;
 
-			if (!ppChannel || !ppChannelPair.second.m_uIndex)
-				continue;	// A deleted channel.
+			if (!ppChannel || !ppChannelPair.second.m_uIndex)	// Already freed.
+				continue;	
 
 			FMOD::Sound* pSound = nullptr;
-			(*ppChannel)->getCurrentSound(&pSound);	// Free channel if there were no sound playing.
+			(*ppChannel)->getCurrentSound(&pSound);	// Free the channel if there were no sound playing.
 
 			if (bShouldRemove || !pSound)
 			{
 				gFMODChannelManager::Free(&ppChannelPair.second);	// Just free the channel if it is entity gets removed.
 			}
-			else
+			else	// Otherwise, update the entity info for the the sound.
 			{
 				pos = VecConverts(pEntity->origin, true);
 				vel = VecConverts(pEntity->curstate.velocity, true);
