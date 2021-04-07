@@ -170,8 +170,14 @@ void Sound_Init()
 
 FMOD::Sound* PrecacheSound(std::string szSample, FMOD_MODE iMode)
 {
-	Q_snprintf(szBuffer1, ARRAYSIZE(szBuffer1) - 1U, "sound/%s", szSample.c_str());
-	g_pInterface->FileSystem->GetLocalPath(szBuffer1, szBuffer2, ARRAYSIZE(szBuffer2) - 1U);
+	// Add the "sound/" at the start.
+	if (strncmp(szSample.c_str(), "sound/", 6U))
+	{
+		Q_snprintf(szBuffer1, ARRAYSIZE(szBuffer1) - 1U, "sound/%s", szSample.c_str());
+		g_pInterface->FileSystem->GetLocalPath(szBuffer1, szBuffer2, ARRAYSIZE(szBuffer2) - 1U);
+	}
+	else
+		g_pInterface->FileSystem->GetLocalPath(szSample.c_str(), szBuffer2, ARRAYSIZE(szBuffer2) - 1U);
 
 	if (g_mapSoundPrecache.find(szBuffer2) == g_mapSoundPrecache.end())
 	{
@@ -249,13 +255,16 @@ void Sound_Think(double flDeltaTime)
 	for (auto& channelPair : g_mapPositionSounds)
 	{
 		auto& ppChannel = channelPair.second.m_ppChannel;
+
+		if (!ppChannel)	// Already freed.
+			continue;
+
 		FMOD::Sound* pSound = nullptr;
 		(*ppChannel)->getCurrentSound(&pSound);
 
 		if (!pSound)	// Free channel if there were no sound playing.
 		{
 			gFMODChannelManager::Free(&channelPair.second);
-			g_mapPositionSounds.erase(channelPair.first);
 		}
 	}
 

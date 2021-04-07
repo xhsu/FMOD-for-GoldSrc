@@ -12,6 +12,7 @@ Modern Warfare Dev Team
 void (*g_pfnS_StartStaticSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 void (*g_pfnS_StartDynamicSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 void *(*g_pfnCache_Check)(cache_user_t* c) = nullptr;
+sfxcache_t* (*g_pfnS_LoadSound)(sfx_t* s, /*channel_t* */void* ch) = nullptr;	// Since we cannot handle channel_t*
 
 EntitySoundMap g_mapEntitySound;
 PositionSoundMap g_mapPositionSounds;
@@ -33,17 +34,27 @@ void Sound_InstallHook()
 	*(void**)&g_pfnCache_Check = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, Cache_Check_SIG, sizeof(Cache_Check_SIG) - 1U);
 	if (!g_pfnCache_Check)
 		Sys_Error("Function \"Cache_Check\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
+
+	*(void**)&g_pfnS_LoadSound = g_pMetaHookAPI->SearchPattern((void*)g_dwEngineBase, g_dwEngineSize, S_LoadSound_SIG, sizeof(S_LoadSound_SIG) - 1U);
+	if (!g_pfnS_LoadSound)
+		Sys_Error("Function \"S_LoadSound\" no found!\nEngine buildnum %d unsupported!", g_dwEngineBuildnum);
 }
 
 bool Sound_IsLoopedByWav(sfx_t* pSFXin)
 {
 	sfxcache_t* sc = (sfxcache_t *)g_pfnCache_Check(&pSFXin->cache);
 
-	return sc->loopstart >= 0;
+	if (!sc)
+		sc = g_pfnS_LoadSound(pSFXin, nullptr);
+
+	return sc && sc->loopstart >= 0;
 }
 
-void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch, FUNC_StartSound* pfn)
+void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
+	if (!pSFXin)	// What's wrong with you???
+		return;
+
 	std::string szSample = std::string((char*)pSFXin);
 	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntity);
 	FMOD::Channel** ppChannel = nullptr;
@@ -57,8 +68,16 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 		bitsMods |= FMOD_LOOP_NORMAL;
 	}
 
+	// Local sound always play as 2D.
+	if (gEngfuncs.pEventAPI->EV_IsLocal(iEntity - 1) || !iEntity)	// iEntity == 0 is menu sound???
+	{
+		// TODO: This cannot cover the observer situation.
+		PlaySound(pSFXin->name);
+		return;
+	}
+
 	// No eneity or entity model? You must be a dummy sounder.
-	if (!pEntity || !pEntity->model)
+	else if (!pEntity || !pEntity->model)
 	{
 		if (!g_mapPositionSounds[vecOrigin].m_ppChannel)	// No found.
 		{
@@ -69,7 +88,6 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 		pChannelInfo = &g_mapPositionSounds[vecOrigin];
 		pos = VecConverts(vecOrigin, true);
 	}
-
 	else if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
 	{
 		ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel = gFMODChannelManager::PermanentAllocate(&g_mapEntitySound[iEntity][iChannel].m_uIndex);
@@ -120,65 +138,10 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 
 void S_StartStaticSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
-	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntity);
-	bool bDummyEntity = (!pEntity || !pEntity->model);
-
-	if (Sound_IsLoopedByWav(pSFXin))
-		gEngfuncs.pfnRandomLong(0, 1);
-
-	if (bDummyEntity || !strstr(pSFXin->name, "weapons"))
-		g_pfnS_StartStaticSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
-	else if (gEngfuncs.pEventAPI->EV_IsLocal(iEntity - 1))
-	{
-		// This cannot cover the observer situation.
-		PlaySound(pSFXin->name);
-	}
-	else
-	{
-		FMOD::Sound* pSound = PrecacheSound(pSFXin->name, FMOD_DEFAULT_IN_GOLDSRC);
-		FMOD_VECTOR	pos = VecConverts(vecOrigin, true);
-
-		pSound->set3DMinMaxDistance(0.1f / SND_DISTANCEFACTOR, AttenuationToRadius(flAttenuation) / SND_DISTANCEFACTOR);
-
-		if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
-			gFMODChannelManager::PermanentAllocate(&g_mapEntitySound[iEntity][iChannel]);
-
-		auto ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel;
-		gFModSystem->playSound(pSound, nullptr, true, ppChannel);	// Have to activate the channel first. Otherwise it will be a nullptr.
-		(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);
-		(*ppChannel)->setVolume(flVolume);
-		(*ppChannel)->setVolumeRamp(false);
-		(*ppChannel)->setPitch(float(iPitch) / 100.0f);	// original formula for most CS weapons: 94 + gEngfuncs.pfnRandomLong(0, 0xf)
-		(*ppChannel)->setPaused(false);	// Keep this as the final step.
-	}
+	StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
 }
 
 void S_StartDynamicSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
-	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntity);
-	bool bDummyEntity = (!pEntity || !pEntity->model);
-
-	if (Sound_IsLoopedByWav(pSFXin))
-		gEngfuncs.pfnRandomLong(0, 1);
-
-	if (bDummyEntity || !strstr((const char*)pSFXin, "weapons"))
-		g_pfnS_StartDynamicSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
-	else
-	{
-		FMOD::Sound* pSound = PrecacheSound((const char*)pSFXin, FMOD_DEFAULT_IN_GOLDSRC);
-		FMOD_VECTOR	pos = VecConverts(vecOrigin, true);
-
-		pSound->set3DMinMaxDistance(0.1f / SND_DISTANCEFACTOR, (972.85404f / fmax(0.001f, flAttenuation)) / SND_DISTANCEFACTOR);
-
-		if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
-			gFMODChannelManager::PermanentAllocate(&g_mapEntitySound[iEntity][iChannel]);
-
-		auto ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel;
-		gFModSystem->playSound(pSound, nullptr, true, ppChannel);	// Have to activate the channel first. Otherwise it will be a nullptr.
-		(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);
-		(*ppChannel)->setVolume(flVolume);
-		(*ppChannel)->setVolumeRamp(false);
-		(*ppChannel)->setPitch(float(iPitch) / 100.0f);	// original formula for most CS weapons: 94 + gEngfuncs.pfnRandomLong(0, 0xf)
-		(*ppChannel)->setPaused(false);	// Keep this as the final step.
-	}
+	StartSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
 }
