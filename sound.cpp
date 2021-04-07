@@ -42,6 +42,82 @@ bool Sound_IsLoopedByWav(sfx_t* pSFXin)
 	return sc->loopstart >= 0;
 }
 
+void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch, FUNC_StartSound* pfn)
+{
+	std::string szSample = std::string((char*)pSFXin);
+	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntity);
+	FMOD::Channel** ppChannel = nullptr;
+	FMOD_VECTOR pos = g_fmodvecZero;
+	fmod_channel_info_t* pChannelInfo = nullptr;
+	FMOD_MODE bitsMods = FMOD_DEFAULT_IN_GOLDSRC;
+
+	if (Sound_IsLoopedByWav(pSFXin))
+	{
+		bitsMods &= ~FMOD_LOOP_OFF;
+		bitsMods |= FMOD_LOOP_NORMAL;
+	}
+
+	// No eneity or entity model? You must be a dummy sounder.
+	if (!pEntity || !pEntity->model)
+	{
+		if (!g_mapPositionSounds[vecOrigin].m_ppChannel)	// No found.
+		{
+			gFMODChannelManager::PermanentAllocate(&g_mapPositionSounds[vecOrigin]);
+		}
+
+		ppChannel = g_mapPositionSounds[vecOrigin].m_ppChannel;
+		pChannelInfo = &g_mapPositionSounds[vecOrigin];
+		pos = VecConverts(vecOrigin, true);
+	}
+
+	else if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
+	{
+		ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel = gFMODChannelManager::PermanentAllocate(&g_mapEntitySound[iEntity][iChannel].m_uIndex);
+		pChannelInfo = &g_mapEntitySound[iEntity][iChannel];
+		pos = VecConverts(pEntity->origin, true);
+	}
+	else
+	{
+		ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel;
+		pChannelInfo = &g_mapEntitySound[iEntity][iChannel];
+		pos = VecConverts(pEntity->origin, true);
+	}
+
+	if (bitsFlags & SND_STOP)
+	{
+		(*ppChannel)->stop();
+
+		gFMODChannelManager::Free(pChannelInfo);	// The sound is over. Free it.
+	}
+	else if (bitsFlags & SND_CHANGE_PITCH)
+	{
+		(*ppChannel)->setPitch(float(iPitch) / 100.0f);
+	}
+	else if (bitsFlags & SND_CHANGE_VOL)
+	{
+		(*ppChannel)->setVolume(flVolume);
+		(*ppChannel)->setVolumeRamp(true);
+	}
+	/*
+	else if (bitsFlags & SND_SPAWNING)
+	{
+		// LUNA: What to do with this?????
+	}
+	*/
+	else
+	{
+		auto pSound = PrecacheSound(szSample, bitsMods);
+		pSound->set3DMinMaxDistance(1.0f / SND_DISTANCEFACTOR, AttenuationToRadius(flAttenuation) / SND_DISTANCEFACTOR);
+
+		gFModSystem->playSound(pSound, nullptr, true, ppChannel);	// Have to activate the channel first. Otherwise it will be a nullptr.
+		(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);
+		(*ppChannel)->setVolume(flVolume);
+		(*ppChannel)->setVolumeRamp(false);
+		(*ppChannel)->setPitch(float(iPitch) / 100.0f);	// original formula for most CS weapons: 94 + gEngfuncs.pfnRandomLong(0, 0xf)
+		(*ppChannel)->setPaused(false);	// Keep this as the final step.
+	}
+}
+
 void S_StartStaticSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)
 {
 	cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntity);
@@ -52,16 +128,17 @@ void S_StartStaticSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOri
 
 	if (bDummyEntity || !strstr(pSFXin->name, "weapons"))
 		g_pfnS_StartStaticSound(iEntity, iChannel, pSFXin, vecOrigin, flVolume, flAttenuation, bitsFlags, iPitch);
-	//else if (gEngfuncs.pEfxAPI->EV_IsLocal(iEntity - 1))
-	//{
-	//	PlaySound(pSFXin->name);
-	//}
+	else if (gEngfuncs.pEventAPI->EV_IsLocal(iEntity - 1))
+	{
+		// This cannot cover the observer situation.
+		PlaySound(pSFXin->name);
+	}
 	else
 	{
 		FMOD::Sound* pSound = PrecacheSound(pSFXin->name, FMOD_DEFAULT_IN_GOLDSRC);
 		FMOD_VECTOR	pos = VecConverts(vecOrigin, true);
 
-		pSound->set3DMinMaxDistance(0.1f / SND_DISTANCEFACTOR, (972.85404f / fmax(0.001f, flAttenuation)) / SND_DISTANCEFACTOR);
+		pSound->set3DMinMaxDistance(0.1f / SND_DISTANCEFACTOR, AttenuationToRadius(flAttenuation) / SND_DISTANCEFACTOR);
 
 		if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
 			gFMODChannelManager::PermanentAllocate(&g_mapEntitySound[iEntity][iChannel]);
@@ -74,72 +151,6 @@ void S_StartStaticSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOri
 		(*ppChannel)->setPitch(float(iPitch) / 100.0f);	// original formula for most CS weapons: 94 + gEngfuncs.pfnRandomLong(0, 0xf)
 		(*ppChannel)->setPaused(false);	// Keep this as the final step.
 	}
-
-	//std::string szSample = std::string((char*)pSFXin);
-	//cl_entity_t* pEntity = gEngfuncs.GetEntityByIndex(iEntity);
-	//FMOD::Channel** ppChannel = nullptr;
-	//FMOD_VECTOR pos = g_fmodvecZero;
-	//fmod_channel_info_t* pChannelInfo = nullptr;
-
-	//// No eneity or entity model? You must be a dummy sounder.
-	//if (!pEntity || !pEntity->model)
-	//{
-	//	if (!g_mapPositionSounds[vecOrigin].m_ppChannel)	// No found.
-	//	{
-	//		gFMODChannelManager::PermanentAllocate(&g_mapPositionSounds[vecOrigin]);
-	//	}
-
-	//	ppChannel = g_mapPositionSounds[vecOrigin].m_ppChannel;
-	//	pChannelInfo = &g_mapPositionSounds[vecOrigin];
-	//	pos = VecConverts(vecOrigin, true);
-	//}
-
-	//else if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
-	//{
-	//	ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel = gFMODChannelManager::PermanentAllocate(&g_mapEntitySound[iEntity][iChannel].m_uIndex);
-	//	pChannelInfo = &g_mapEntitySound[iEntity][iChannel];
-	//	pos = VecConverts(pEntity->origin, true);
-	//}
-	//else
-	//{
-	//	ppChannel = g_mapEntitySound[iEntity][iChannel].m_ppChannel;
-	//	pChannelInfo = &g_mapEntitySound[iEntity][iChannel];
-	//	pos = VecConverts(pEntity->origin, true);
-	//}
-
-	//if (bitsFlags & SND_STOP)
-	//{
-	//	(*ppChannel)->stop();
-
-	//	gFMODChannelManager::Free(pChannelInfo);	// The sound is over. Free it.
-	//}
-	//else if (bitsFlags & SND_CHANGE_PITCH)
-	//{
-	//	(*ppChannel)->setPitch(float(iPitch) / 100.0f);
-	//}
-	//else if (bitsFlags & SND_CHANGE_VOL)
-	//{
-	//	(*ppChannel)->setVolume(flVolume);
-	//	(*ppChannel)->setVolumeRamp(true);
-	//}
-	///*
-	//else if (bitsFlags & SND_SPAWNING)
-	//{
-	//	// LUNA: What to do with this?????
-	//}
-	//*/
-	//else
-	//{
-	//	auto pSound = PrecacheSound(szSample, FMOD_DEFAULT_IN_GOLDSRC);
-	//	pSound->set3DMinMaxDistance(1.0f / SND_DISTANCEFACTOR, 1000.0f / SND_DISTANCEFACTOR);	// TODO
-
-	//	gFModSystem->playSound(pSound, nullptr, true, ppChannel);	// Have to activate the channel first. Otherwise it will be a nullptr.
-	//	(*ppChannel)->set3DAttributes(&pos, &g_fmodvecZero);
-	//	(*ppChannel)->setVolume(flVolume);
-	//	(*ppChannel)->setVolumeRamp(false);
-	//	(*ppChannel)->setPitch(float(iPitch) / 100.0f);	// original formula for most CS weapons: 94 + gEngfuncs.pfnRandomLong(0, 0xf)
-	//	(*ppChannel)->setPaused(false);	// Keep this as the final step.
-	//}
 }
 
 void S_StartDynamicSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, float flVolume, float flAttenuation, int bitsFlags, int iPitch)

@@ -48,6 +48,11 @@ inline FMOD_VECTOR VecConverts(const Vector& v, bool bScale = false)
 	return FMOD_VECTOR({ v.x, v.z, v.y });
 }
 
+inline float AttenuationToRadius(float flAttenuation)
+{
+	return (972.85404f / fmax(0.001f, flAttenuation));	// This result came from a math model computation.
+}
+
 void Sound_Init();
 void Sound_Think(double flDeltaTime);
 void Sound_Exit();

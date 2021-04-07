@@ -313,12 +313,6 @@ typedef void                        (*pfnEngSrc_VGui_ViewportPaintBackground_t )
 typedef byte*						(*pfnEngSrc_COM_LoadFile_t )				( char *path, int usehunk, int *pLength );
 typedef char*						(*pfnEngSrc_COM_ParseFile_t )			( char *data, char *token );
 typedef void						(*pfnEngSrc_COM_FreeFile_t)				( void *buffer );
-typedef struct triangleapi_s *		pTriAPI;
-typedef struct efx_api_s *			pEfxAPI;
-typedef struct event_api_s *		pEventAPI;
-typedef struct demo_api_s *			pDemoAPI;
-typedef struct net_api_s *			pNetAPI;
-typedef struct IVoiceTweak_s *		pVoiceTweak;
 typedef int							(*pfnEngSrc_IsSpectateOnly_t ) ( void );
 typedef struct model_s *			(*pfnEngSrc_LoadMapSprite_t )			( const char *filename );
 typedef void						(*pfnEngSrc_COM_AddAppDirectoryToSearchPath_t ) ( const char *pszBaseDir, const char *appName );
@@ -363,6 +357,8 @@ typedef void						(*pfnEngSrc_pfnFillRGBABlend_t )			( int x, int y, int width, 
 typedef int						(*pfnEngSrc_pfnGetAppID_t)			( void );
 typedef cmdalias_t*				(*pfnEngSrc_pfnGetAliases_t)		( void );
 typedef void					(*pfnEngSrc_pfnVguiWrap2_GetMouseDelta_t) ( int *x, int *y );
+
+#include "event_api.h"
 
 // Pointers to the exported engine functions themselves
 typedef struct cl_enginefuncs_s

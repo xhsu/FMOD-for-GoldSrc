@@ -229,9 +229,12 @@ void Sound_Think(double flDeltaTime)
 			if (!ppChannel || !ppChannelPair.second.m_uIndex)
 				continue;	// A deleted channel.
 
-			if (bShouldRemove)
+			FMOD::Sound* pSound = nullptr;
+			(*ppChannel)->getCurrentSound(&pSound);	// Free channel if there were no sound playing.
+
+			if (bShouldRemove || !pSound)
 			{
-				gFMODChannelManager::Free(&ppChannelPair.second);	// Just free the channel if it is unused.
+				gFMODChannelManager::Free(&ppChannelPair.second);	// Just free the channel if it is entity gets removed.
 			}
 			else
 			{
@@ -240,6 +243,19 @@ void Sound_Think(double flDeltaTime)
 
 				(*ppChannel)->set3DAttributes(&pos, &vel);	// Sync the position with this entity.
 			}
+		}
+	}
+
+	for (auto& channelPair : g_mapPositionSounds)
+	{
+		auto& ppChannel = channelPair.second.m_ppChannel;
+		FMOD::Sound* pSound = nullptr;
+		(*ppChannel)->getCurrentSound(&pSound);
+
+		if (!pSound)	// Free channel if there were no sound playing.
+		{
+			gFMODChannelManager::Free(&channelPair.second);
+			g_mapPositionSounds.erase(channelPair.first);
 		}
 	}
 

@@ -63,6 +63,8 @@ typedef struct sfxcache_s
 
 } sfxcache_t;
 
+typedef void (*FUNC_StartSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch);
+
 using EntitySoundChannel = std::unordered_map<int, fmod_channel_info_t>;
 using EntitySoundMap = std::unordered_map<int, EntitySoundChannel>;
 extern EntitySoundMap g_mapEntitySound;
