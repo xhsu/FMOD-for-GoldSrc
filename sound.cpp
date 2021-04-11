@@ -13,7 +13,7 @@ void (*g_pfnS_StartStaticSound)(int entnum, int entchannel, sfx_t* sfxin, Vector
 void (*g_pfnS_StartDynamicSound)(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch) = nullptr;
 void *(*g_pfnCache_Check)(cache_user_t* c) = nullptr;
 sfxcache_t* (*g_pfnS_LoadSound)(sfx_t* s, /*channel_t* */void* ch) = nullptr;	// Due to we cannot handle channel_t*
-void (*g_pfnS_StopAllSounds)(bool STFU) = nullptr;
+void (*g_pfnS_StopAllSounds)(bool STFU) = nullptr;	// @param: clear the sound buffer instantly?
 
 EntitySoundMap g_mapEntitySound;
 PositionSoundMap g_mapPositionSounds;
@@ -69,9 +69,6 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 	FMOD_VECTOR pos = g_fmodvecZero;
 	fmod_channel_info_t* pChannelInfo = nullptr;
 	FMOD_MODE bitsMods = FMOD_DEFAULT_IN_GOLDSRC;
-
-	if (!strcmp(pSFXin->name, "common/null.wav"))
-		gEngfuncs.pfnRandomFloat(0, 1);
 
 	if (Sound_IsLoopedByWav(pSFXin))
 	{
