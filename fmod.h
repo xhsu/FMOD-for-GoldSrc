@@ -30,7 +30,7 @@ typedef struct fmod_channel_info_s
 
 namespace gFMODChannelManager
 {
-	FMOD::Channel** Allocate(float flCooldown = 3.5f);
+	FMOD::Channel** Allocate(float flCooldown = 3.5f, fmod_channel_info_t* infoReturned = nullptr);
 	FMOD::Channel** PermanentAllocate(size_t* piIndex);
 	void PermanentAllocate(fmod_channel_info_t* info);	// Recommanded.
 	void Free(size_t index);

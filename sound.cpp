@@ -17,6 +17,7 @@ void (*g_pfnS_StopAllSounds)(bool STFU) = nullptr;
 
 EntitySoundMap g_mapEntitySound;
 PositionSoundMap g_mapPositionSounds;
+StaticSoundList g_lstStaticSounds;
 
 void Sound_InstallHook()
 {
@@ -69,6 +70,9 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 	fmod_channel_info_t* pChannelInfo = nullptr;
 	FMOD_MODE bitsMods = FMOD_DEFAULT_IN_GOLDSRC;
 
+	if (!strcmp(pSFXin->name, "common/null.wav"))
+		gEngfuncs.pfnRandomFloat(0, 1);
+
 	if (Sound_IsLoopedByWav(pSFXin))
 	{
 		bitsMods &= ~FMOD_LOOP_OFF;
@@ -94,6 +98,30 @@ void StartSound(int iEntity, int iChannel, sfx_t* pSFXin, Vector& vecOrigin, flo
 		ppChannel = g_mapPositionSounds[vecOrigin].m_ppChannel;
 		pChannelInfo = &g_mapPositionSounds[vecOrigin];
 		pos = VecConverts(vecOrigin, true);
+	}
+	else if (iChannel == CHAN_STATIC)	// Treat static channel specially, as they can be heard overlaply.
+	{
+		static_channel_t newStaticChannel;
+		newStaticChannel.m_pEntity = pEntity;
+
+		if (bitsMods & FMOD_LOOP_OFF)
+		{
+			FMOD_TIMEUNIT iLength = 3500;
+			FMOD::Sound* pSound = PrecacheSound(szSample, bitsMods);
+
+			pSound->getLength(&iLength, FMOD_TIMEUNIT_MS);
+			gFMODChannelManager::Allocate(float(iLength) / 1000.0f, newStaticChannel);	// Auto conversion.
+		}
+		else
+		{
+			gFMODChannelManager::PermanentAllocate(newStaticChannel);
+		}
+
+		g_lstStaticSounds.push_back(newStaticChannel);
+
+		ppChannel = newStaticChannel.m_ppChannel;
+		pChannelInfo = newStaticChannel;
+		pos = VecConverts(pEntity->origin, true);
 	}
 	else if (!g_mapEntitySound[iEntity][iChannel].m_ppChannel)
 	{
@@ -190,6 +218,12 @@ void S_StopAllSounds(bool STFU)
 		gFMODChannelManager::Free(&channelPair.second);
 	}
 
+	for (auto& staticChannel : g_lstStaticSounds)
+	{
+		gFMODChannelManager::Free(staticChannel);
+	}
+
 	g_mapEntitySound.clear();
 	g_mapPositionSounds.clear();
+	g_lstStaticSounds.clear();
 }

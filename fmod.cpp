@@ -30,7 +30,7 @@ namespace gFMODChannelManager
 	};
 	std::array<channel_info_s, FMOD_MAX_CHANNEL_GOLDSRC> m_Channels;
 
-	FMOD::Channel** Allocate(float flCooldown)
+	FMOD::Channel** Allocate(float flCooldown, fmod_channel_info_t* infoReturned)
 	{
 		size_t iMin = 0;
 		double flMinTime = 99999999.0;
@@ -43,18 +43,18 @@ namespace gFMODChannelManager
 				break;
 			}
 
-			// record the time on the way.
+			// record the time by the way.
 			if (m_Channels[i].m_flNextAvailable < flMinTime)
 			{
 				iMin = i;
 				flMinTime = m_Channels[i].m_flNextAvailable;
 			}
+		}
 
-			if (m_Channels[i].m_flNextAvailable > g_flClientTime)
-				continue;
-
-			m_Channels[i].m_flNextAvailable = g_flClientTime + flCooldown;	// since only gun fire SFX supported by FMOD... it quite enough.
-			return &m_Channels[i].m_pChannel;
+		if (infoReturned)	// If additional info is required.
+		{
+			infoReturned->m_uIndex = iMin;
+			infoReturned->m_ppChannel = &m_Channels[iMin].m_pChannel;
 		}
 
 		// just occuiped a furthest unused channel.
@@ -75,22 +75,12 @@ namespace gFMODChannelManager
 				break;
 			}
 
-			// record the time on the way.
+			// record the time by the way.
 			if (m_Channels[i].m_flNextAvailable < flMinTime)
 			{
 				iMin = i;
 				flMinTime = m_Channels[i].m_flNextAvailable;
 			}
-
-			if (m_Channels[i].m_flNextAvailable > g_flClientTime)
-				continue;
-
-			m_Channels[i].m_flNextAvailable = g_flClientTime + 31622400.0;
-
-			if (piIndex)
-				*piIndex = i;
-
-			return &m_Channels[i].m_pChannel;
 		}
 
 		// just occuiped a furthest unused channel.
@@ -273,6 +263,34 @@ void Sound_Think(double flDeltaTime)
 		if (!pSound)	// Free channel if there were no sound playing.
 		{
 			gFMODChannelManager::Free(&channelPair.second);
+		}
+	}
+
+	for (auto& staticChannel : g_lstStaticSounds)
+	{
+		pos = VecConverts(staticChannel.m_pEntity->origin, true);
+		vel = VecConverts(staticChannel.m_pEntity->curstate.velocity, true);
+
+		(*staticChannel.m_ppChannel)->set3DAttributes(&pos, &vel);	// Sync the position with this entity.
+
+		// We don't need to manually free anything in this channel. They will be freed automatically.
+	}
+
+	auto iter = g_lstStaticSounds.begin();
+	while (iter != g_lstStaticSounds.end())
+	{
+		if (!iter->m_ppChannel || !iter->m_uIndex)	// Looping static sound gets stopped.
+		{
+			iter = g_lstStaticSounds.erase(iter);
+		}
+		else
+		{
+			pos = VecConverts(iter->m_pEntity->origin, true);
+			vel = VecConverts(iter->m_pEntity->curstate.velocity, true);
+
+			(*iter->m_ppChannel)->set3DAttributes(&pos, &vel);
+
+			iter++;
 		}
 	}
 

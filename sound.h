@@ -74,6 +74,20 @@ extern EntitySoundMap g_mapEntitySound;
 using PositionSoundMap = std::map<Vector, fmod_channel_info_t>;	// Fuck the unordered_map, it requires a hash function.
 extern PositionSoundMap g_mapPositionSounds;
 
+typedef struct static_channel_s
+{
+	FMOD::Channel** m_ppChannel{ nullptr };
+	unsigned		m_uIndex{ 0U };
+	cl_entity_t*	m_pEntity{ nullptr };
+
+	constexpr operator fmod_channel_info_t* ()				{ return (fmod_channel_info_t*)&m_ppChannel; }	// HACKHACK
+	constexpr operator const fmod_channel_info_t* () const	{ return (fmod_channel_info_t*)&m_ppChannel; }
+
+} static_channel_t;
+
+using StaticSoundList = std::list<static_channel_t>;
+extern StaticSoundList g_lstStaticSounds;	// A sound channel which don't overlap with each other.
+
 void Sound_InstallHook();
 void S_StartStaticSound(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch);
 void S_StartDynamicSound(int entnum, int entchannel, sfx_t* sfxin, Vector& origin, float fvol, float attenuation, int flags, int pitch);
