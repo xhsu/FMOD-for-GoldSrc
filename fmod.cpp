@@ -186,11 +186,11 @@ FMOD::Sound* PrecacheSound(std::string szSample, FMOD_MODE iMode)
 void PlaySound(const char* szSound, float flVolume, int iPitch)
 {
 	FMOD_TIMEUNIT iLength = 3500;
-	auto pSound = PrecacheSound(szSound, FMOD_DEFAULT_IN_GOLDSRC);
+	auto pSound = PrecacheSound(szSound, FMOD_2D | FMOD_LOOP_OFF);
 	pSound->getLength(&iLength, FMOD_TIMEUNIT_MS);
 
 	auto ppChannel = gFMODChannelManager::Allocate(float(iLength) / 1000.0f);
-	gFModSystem->playSound(PrecacheSound(szSound, FMOD_2D | FMOD_LOOP_OFF), nullptr, false, ppChannel);
+	gFModSystem->playSound(pSound, nullptr, false, ppChannel);
 	(*ppChannel)->setVolume(flVolume);
 	(*ppChannel)->setVolumeRamp(false);
 	(*ppChannel)->setPitch(float(iPitch) / 100.0f);
